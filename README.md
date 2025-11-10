@@ -27,9 +27,9 @@ The chatbot will eventually support:
 
 | Phase | Description | Status |
 |:------|:-------------|:-------|
-| 1 | Authentication (API token input + validation) |  In Progress |
-| 2 | Data Fetching (courses, assignments, grades) |  Next |
-| 3 | Logical Interface (CLI / chatbot interaction) |  Planned |
+| 1 | Authentication (API token input + validation) |  Done |
+| 2 | Data Fetching (courses, assignments, grades) |  In Progress |
+| 3 | Logical Interface (chatbot interaction) |  Next |
 
 ---
 
