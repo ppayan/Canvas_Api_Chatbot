@@ -1,4 +1,4 @@
-# main.py
+# main.py - Entry point for the Canvas API Chatbot (Hybrid Design Prototype)
 from Canvas_api import CanvasAPI
 
 def main():
@@ -11,12 +11,12 @@ def main():
 
     user = api.get_current_user()
     if not user:
-        print("\n[X] Authentication failed. Please check your token or URL.")
+        print("\nAuthentication failed. Please check your token or URL.")
         return
 
-    print(f"\n[OK] Successfully authenticated as: {user.get('name')} (ID: {user.get('id')})")
+    print(f"\nSuccessfully authenticated as: {user.get('name')} (ID: {user.get('id')})")
 
-    # Fetch all courses once at login
+    # Fetch all courses once at login all is used for authentication and initial data tests
     courses = api.get_courses()
     if not courses:
         print("\n[!] No courses found or an error occurred.")
@@ -47,23 +47,23 @@ def main():
             selected = courses[int(choice) - 1]
             course_name = selected.get("name", f"(id {selected.get('id')})")
             course_id = selected.get("id")
-            print(f"\n[Book] Fetching assignments for: {course_name}...\n")
+            print(f"\n Fetching assignments for: {course_name}...\n")
 
             assignments = api.get_assignments(course_id)
             if not assignments:
-                print("  [!] No assignments found or failed to fetch.\n")
+                print("   No assignments found or failed to fetch.\n")
                 continue
 
             for a in assignments:
                 name = a.get("name", "Untitled Assignment")
                 due = a.get("due_at", "No due date")
-                status = "[OK] Submitted" if a.get("has_submitted_submissions") else "[X] Not submitted"
+                status = "Submitted" if a.get("has_submitted_submissions") else "Not submitted"
                 print(f"  * {name}")
                 print(f"    Due: {due}")
                 print(f"    Status: {status}\n")
 
         else:
-            print("[!] Invalid choice. Try again.")
+            print("Invalid choice. Try again.")
 
 if __name__ == "__main__":
     main()

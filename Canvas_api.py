@@ -1,7 +1,8 @@
-# canvas_api.py
+# canvas_api.py - Canvas API interaction module to handle authentication and data retrieval 
 import requests
 
 class CanvasAPI:
+    # Initialize with base URL and access token
     def __init__(self, base_url, access_token):
         # Normalize URL
         if base_url.endswith("/"):
@@ -16,7 +17,7 @@ class CanvasAPI:
         }
         # simple cache for last error
         self.last_error = None
-
+    #this is a helper method to make GET requests
     def _get(self, path, params=None):
         url = f"{self.api_root}{path}"
         try:
@@ -28,14 +29,14 @@ class CanvasAPI:
         except requests.exceptions.RequestException as e:
             self.last_error = str(e)
             return None
-
+    #this gets the current user info from /users/self
     def get_current_user(self):
         """
         Returns user object for /users/self or None on error.
         """
         data = self._get("/users/self")
         return data
-
+    #this gets the list of courses the user is enrolled in
     def get_courses(self, per_page=100, include=None):
         """
         Returns a list of courses the user is enrolled in.
@@ -46,8 +47,6 @@ class CanvasAPI:
         page = 1
         params = {"per_page": per_page, "page": page}
         if include:
-            # Canvas expects include[]=something for each include
-            # requests will encode list correctly if we provide include[] keys
             for i, val in enumerate(include):
                 params[f"include[{i}]"] = val
 
@@ -71,7 +70,7 @@ class CanvasAPI:
             page += 1
 
         return courses
-
+    #this gets the assignments for a specific course ID
     def get_assignments(self, course_id, per_page=100):
         """
         Returns a list of assignments for a specific course ID.
@@ -90,7 +89,7 @@ class CanvasAPI:
                 break
             page += 1
         return assignments
-    
+    #this gets the current grade for a specific course ID for the overall course grade   
     def get_course_grade(self, course_id):
         """
         Returns the current grade for a specific course.
@@ -107,7 +106,7 @@ class CanvasAPI:
                 'final_grade': enrollment.get('grades', {}).get('final_grade')
             }
         return None
-    
+    #this gets all assignment submissions for the current user in a course     
     def get_assignment_submissions(self, course_id):
         """
         Returns all assignment submissions (with grades) for the current user in a course.
