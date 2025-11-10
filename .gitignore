@@ -1,0 +1,12 @@
+# Ignore Python cache and environment files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+.DS_Store
+
+# Ignore any local config or token files
+config.json
+token.txt
