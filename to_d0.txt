@@ -1,3 +1,2 @@
 1. create reminders
-2. add home button
 3. and work in settings for a notification pusher
