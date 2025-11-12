@@ -164,8 +164,8 @@ class CanvasChatbotGUI:
         
         for text, command in buttons:
             tk.Button(sidebar, text=text, command=command,
-                     bg=self.button_color, font=('Arial', 12),
-                     relief='flat', pady=15, cursor='hand2').pack(fill='x', padx=20, pady=10)
+                    bg=self.button_color, font=('Arial', 12),
+                    relief='flat', pady=15, cursor='hand2').pack(fill='x', padx=20, pady=10)
         
         # Search box
         search_frame = tk.Frame(sidebar, bg=self.sidebar_color)
@@ -178,12 +178,16 @@ class CanvasChatbotGUI:
         self.search_entry.bind('<Return>', lambda e: self.process_search())
         
         tk.Button(search_frame, text="Search", command=self.process_search,
-                 bg='white', relief='flat', font=('Arial', 10)).pack(side='right', padx=(5, 0))
+                bg='white', relief='flat', font=('Arial', 10)).pack(side='right', padx=(5, 0))
         
         # Settings at bottom
         tk.Button(sidebar, text="Settings", command=self.show_settings,
-                 bg=self.button_color, font=('Arial', 12),
-                 relief='flat', pady=15).pack(side='bottom', fill='x', padx=20, pady=20)
+                bg=self.button_color, font=('Arial', 12),
+                relief='flat', pady=15).pack(side='bottom', fill='x', padx=20, pady=20)
+        
+        tk.Button(sidebar, text="Home", command=self.show_main_screen,
+                bg=self.button_color, font=('Arial', 12),
+                relief='flat', pady=15).pack(side='bottom', fill='x', padx=20, pady=20)
     
     #creates the main content area with scrollable functionality
     def create_main_content(self, parent):
@@ -563,6 +567,7 @@ class CanvasChatbotGUI:
         tk.Button(self.content_frame, text="Logout", command=self.logout,
                  bg=self.sidebar_color, fg='white', font=('Arial', 11), 
                  padx=20, pady=5).pack(anchor='w', pady=10)
+        
     
     #handles the logout process
     def logout(self):
