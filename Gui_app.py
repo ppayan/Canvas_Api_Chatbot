@@ -6,6 +6,9 @@ import threading
 from datetime import datetime, timezone, timedelta
 from Canvas_api import CanvasAPI
 from chatbot import CanvasChatBot
+from tkinter import messagebox
+import os, json, uuid
+from datetime import datetime
 
 # Try to import NLTK
 try:
@@ -616,13 +619,109 @@ class CanvasChatbotGUI:
     #show reminders when the reminders button is clicked    
     def show_reminders(self):
         self.clear_content()
-        tk.Label(self.content_frame, text="Reminders", 
-                font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
-        tk.Label(self.content_frame, text="Reminder feature coming soon!", 
-                font=('Arial', 12), bg=self.main_bg, fg='#2C1810').pack(pady=10)
-        
-        # Update scroll region
-        self.update_scroll_region()
+        reminders_path = os.path.join(os.path.expanduser("~"), ".canvas_chatbot_reminders.json")
+
+    # Title
+        tk.Label(self.content_frame, text="Reminders",
+        font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
+
+    # Storage helpers
+        def load_reminders():
+            try:
+                if os.path.exists(reminders_path):
+                    with open(reminders_path, "r") as f:
+                        return json.load(f)
+            except Exception:
+                pass
+            return []
+
+        def save_reminders(data):
+            try:
+                with open(reminders_path, "w") as f:
+                    json.dump(data, f, indent=2)
+            except Exception as e:
+                messagebox.showerror("Reminders", f"Could not save reminders: {e}")
+
+        reminders = load_reminders()
+
+        # Buttons row
+        btns = tk.Frame(self.content_frame, bg=self.main_bg)
+        btns.pack(pady=10)
+
+        # List area
+        list_frame = tk.Frame(self.content_frame, bg=self.main_bg)
+        list_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        def render_list():
+            for w in list_frame.winfo_children():
+                w.destroy()
+            if not reminders:
+                tk.Label(list_frame, text="No reminders yet.", bg=self.main_bg).pack(anchor='w')
+                return
+            try:
+                items = sorted(reminders, key=lambda r: r.get("when", ""))
+            except Exception:
+                items = reminders
+            for r in items:
+                row = tk.Frame(list_frame, bg=self.main_bg, highlightbackground='#DDD', highlightthickness=1, padx=8, pady=6)
+                row.pack(fill='x', pady=6)
+                title = r.get("title", "Reminder")
+                when  = r.get("when", "")
+                note  = r.get("note", "")
+                tk.Label(row, text=title, bg=self.main_bg, font=('Arial', 12, 'bold')).grid(row=0, column=0, sticky='w')
+                tk.Label(row, text=f"When: {when}", bg=self.main_bg).grid(row=1, column=0, sticky='w')
+                if note:
+                    tk.Label(row, text=note, bg=self.main_bg, fg='#3C3C3C').grid(row=2, column=0, sticky='w')
+
+        # Add dialog
+        def on_add():
+            win = tk.Toplevel(self.root)
+            win.title("Add Reminder")
+            win.configure(bg=self.main_bg)
+
+            def row(rn, label, default=""):
+                tk.Label(win, text=label, bg=self.main_bg).grid(row=rn, column=0, sticky='w', padx=8, pady=4)
+                var = tk.StringVar(value=default)
+                ent = tk.Entry(win, textvariable=var, width=40)
+                ent.grid(row=rn, column=1, sticky='w', padx=8, pady=4)
+                return var
+
+            now = datetime.now()
+            title_v = row(0, "Title")
+            when_v  = row(1, "When (YYYY-MM-DDTHH:MM)", now.strftime("%Y-%m-%dT%H:%M"))
+            note_v  = row(2, "Note (optional)")
+
+            def save_new():
+                t = (title_v.get() or "").strip()
+                w = (when_v.get() or "").strip()
+                n = (note_v.get() or "").strip()
+                if not (t and w):
+                    messagebox.showwarning("Add Reminder", "Please fill Title and When.")
+                    return
+                reminders.append({"id": str(uuid.uuid4()), "title": t, "when": w, "note": n})
+                save_reminders(reminders)
+                render_list()
+                win.destroy()
+
+            tk.Button(win, text="Add", command=save_new,
+                    bg=self.sidebar_color, relief='flat', padx=10, pady=6).grid(row=3, column=0, columnspan=2, pady=8)
+
+        # View handler
+            def on_view():
+                render_list()
+
+        # Buttons wired up
+            tk.Button(btns, text="Add Reminder", command=on_add,
+                bg=self.sidebar_color, relief='flat', padx=20, pady=10).grid(row=0, column=0, padx=10, pady=10)
+
+            tk.Button(btns, text="View Reminders", command=on_view,
+                bg=self.sidebar_color, relief='flat', padx=20, pady=10).grid(row=0, column=1, padx=10, pady=10)
+
+        # Back
+            tk.Button(self.content_frame, text="<- Back", command=self.show_dashboard,
+                bg=self.sidebar_color, relief='flat', padx=10, pady=6).pack(anchor='w', padx=10, pady=(20, 0))
+
+            self.update_scroll_region()
     
     #show settings when the settings button is clicked
     def show_settings(self):

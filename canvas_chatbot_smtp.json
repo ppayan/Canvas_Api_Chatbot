@@ -1,0 +1,8 @@
+{
+    "host": "smtp.yourschool.edu",
+    "port": 465,
+    "use_ssl": true,
+    "username": "yourid@yourschool.edu",
+    "password": "YOUR_APP_OR_SMTP_PASSWORD"
+  }
+  
