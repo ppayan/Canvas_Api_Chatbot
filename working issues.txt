@@ -1,0 +1,6 @@
+need to add the tutorial for getting your client secret with pictures
+need to work the chat functionality 
+
+Aidden tasks
+setting up reminders and the settings page 
+I need to add a home button to take back to the main page 
