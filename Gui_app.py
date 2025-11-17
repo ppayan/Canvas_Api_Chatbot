@@ -6,6 +6,12 @@ import threading
 from datetime import datetime, timezone, timedelta
 from Canvas_api import CanvasAPI
 from chatbot import CanvasChatBot
+<<<<<<< HEAD
+=======
+from tkinter import messagebox
+import os, json, uuid
+from datetime import datetime
+>>>>>>> 5b4d2b77d686d0dbfe4126e5cbb313ab3bc97b96
 
 # Try to import NLTK
 try:
@@ -613,8 +619,8 @@ class CanvasChatbotGUI:
         # Update scroll region
         self.update_scroll_region()
     
-    #show reminders when the reminders button is clicked    
     def show_reminders(self):
+<<<<<<< HEAD
         self.clear_content()
         tk.Label(self.content_frame, text="Reminders", 
                 font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
@@ -622,9 +628,73 @@ class CanvasChatbotGUI:
                 font=('Arial', 12), bg=self.main_bg, fg='#2C1810').pack(pady=10)
         
         # Update scroll region
+=======
+        import tkinter as tk
+        from tkinter import messagebox, simpledialog
+
+        self.clear_content()
+
+        # In-memory list for this session only
+        if not hasattr(self, "_reminders_tmp"):
+            self._reminders_tmp = []
+
+        # Title
+        tk.Label(self.content_frame, text="Reminders",
+        font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
+
+        # Buttons row
+        btns = tk.Frame(self.content_frame, bg=self.main_bg)
+        btns.pack(pady=10)
+
+        # Dedicated area for the list (so we can re-render safely)
+        list_frame = tk.Frame(self.content_frame, bg=self.main_bg)
+        list_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        def render_list():
+            # wipe previous contents
+            for w in list_frame.winfo_children():
+                w.destroy()
+            items = sorted(self._reminders_tmp, key=lambda r: r.get("when", ""))
+            if not items:
+                tk.Label(list_frame, text="No reminders yet.", bg=self.main_bg).pack(anchor='w')
+                return
+            for r in items:
+                row = tk.Frame(list_frame, bg=self.main_bg, highlightbackground='#DDD', highlightthickness=1, padx=8, pady=6)
+                row.pack(fill='x', pady=6)
+                tk.Label(row, text=r.get("title", "(untitled)"), bg=self.main_bg, font=('Arial', 12, 'bold')).pack(anchor='w')
+                tk.Label(row, text=f"When: {r.get('when','')}", bg=self.main_bg).pack(anchor='w')
+                if r.get("note"):
+                    tk.Label(row, text=r["note"], bg=self.main_bg, fg="#3C3C3C").pack(anchor='w')
+
+        def on_add():
+            title = simpledialog.askstring("Add Reminder", "Title:", parent=self.root)
+            if not title:
+                return
+            when = simpledialog.askstring("Add Reminder", "When (YYYY-MM-DDTHH:MM):", parent=self.root)
+            if not when:
+                return
+            note = simpledialog.askstring("Add Reminder", "Note (optional):", parent=self.root) or ""
+            self._reminders_tmp.append({"title": title.strip(), "when": when.strip(), "note": note.strip()})
+            messagebox.showinfo("Reminders", "Saved.")
+            render_list()  # show the new item
+
+        def on_view():
+            render_list()
+
+        tk.Button(btns, text="Add Reminder", command=on_add,
+            bg=self.sidebar_color, relief='flat', padx=20, pady=10).grid(row=0, column=0, padx=10, pady=10)
+
+        tk.Button(btns, text="View Reminders", command=on_view,
+        bg=self.sidebar_color, relief='flat', padx=20, pady=10).grid(row=0, column=1, padx=10, pady=10)
+
+        # Back
+        tk.Button(self.content_frame, text="<- Back", command=self.show_dashboard,
+        bg=self.sidebar_color, relief='flat', padx=10, pady=6).pack(anchor='w', padx=10, pady=(20, 0))
+
+>>>>>>> 5b4d2b77d686d0dbfe4126e5cbb313ab3bc97b96
         self.update_scroll_region()
     
-    #show settings when the settings button is clicked
+        #show settings when the settings button is clicked
     def show_settings(self):
         self.clear_content()
         tk.Label(self.content_frame, text="Settings", 
