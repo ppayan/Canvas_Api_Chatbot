@@ -29,20 +29,14 @@ class CanvasAPI:
         except requests.exceptions.RequestException as e:
             self.last_error = str(e)
             return None
+    
     #this gets the current user info from /users/self
     def get_current_user(self):
-        """
-        Returns user object for /users/self or None on error.
-        """
         data = self._get("/users/self")
         return data
+    
     #this gets the list of courses the user is enrolled in
     def get_courses(self, per_page=100, include=None):
-        """
-        Returns a list of courses the user is enrolled in.
-        Uses simple page loop pagination.
-        `include` can be a list of include strings (e.g., ['term']).
-        """
         courses = []
         page = 1
         params = {"per_page": per_page, "page": page}
@@ -70,11 +64,9 @@ class CanvasAPI:
             page += 1
 
         return courses
+    
     #this gets the assignments for a specific course ID
     def get_assignments(self, course_id, per_page=100):
-        """
-        Returns a list of assignments for a specific course ID.
-        """
         assignments = []
         page = 1
         while True:
@@ -89,12 +81,9 @@ class CanvasAPI:
                 break
             page += 1
         return assignments
+    
     #this gets the current grade for a specific course ID for the overall course grade   
     def get_course_grade(self, course_id):
-        """
-        Returns the current grade for a specific course.
-        Gets user's enrollment which includes current_score and current_grade.
-        """
         enrollments = self._get(f"/courses/{course_id}/enrollments", 
                                params={"user_id": "self"})
         if enrollments and len(enrollments) > 0:
@@ -106,11 +95,29 @@ class CanvasAPI:
                 'final_grade': enrollment.get('grades', {}).get('final_grade')
             }
         return None
+    
     #this gets all assignment submissions for the current user in a course     
     def get_assignment_submissions(self, course_id):
-        """
-        Returns all assignment submissions (with grades) for the current user in a course.
-        """
+        # First, get the user's enrollment to find their user ID
+        user = self.get_current_user()
+        if not user:
+            return []
+        
+        user_id = user.get('id')
+        
+        # Fetch submissions for this user
         submissions = self._get(f"/courses/{course_id}/students/submissions", 
-                               params={"student_ids": ["self"], "per_page": 100})
+                               params={
+                                   "student_ids[]": user_id, 
+                                   "per_page": 100
+                               })
         return submissions if submissions else []
+    
+    def get_single_assignment_submission(self, course_id, assignment_id):
+        user = self.get_current_user()
+        if not user:
+            return None
+        
+        user_id = user.get('id')
+        submission = self._get(f"/courses/{course_id}/assignments/{assignment_id}/submissions/{user_id}")
+        return submission

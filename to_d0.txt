@@ -1,0 +1,2 @@
+1. create reminders
+3. and work in settings for a notification pusher

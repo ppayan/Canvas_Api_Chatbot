@@ -5,6 +5,13 @@ from tkinter import messagebox
 import threading
 from datetime import datetime, timezone, timedelta
 from Canvas_api import CanvasAPI
+from chatbot import CanvasChatBot
+<<<<<<< HEAD
+=======
+from tkinter import messagebox
+import os, json, uuid
+from datetime import datetime
+>>>>>>> 5b4d2b77d686d0dbfe4126e5cbb313ab3bc97b96
 
 # Try to import NLTK
 try:
@@ -27,22 +34,22 @@ class CanvasChatbotGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Canvas API Chatbot")
-        self.root.geometry("1200x700")
+        self.root.geometry("1400x900")
         
-        self.sidebar_color = "#6B1C1C"  # Maroon
-        self.button_color = "#D8C5D8"   # Light purple
-        self.main_bg = "#F5F5F0"        # Cream
+        self.sidebar_color = "#6B1C1C"  
+        self.button_color = "#D8C5D8"   
+        self.main_bg = "#F5F5F0"        
         
         self.api = None
         self.user_name = "User"
         self.courses = []
         self.assignments_cache = {}
         self.last_sync_time = None
+        self.chatbot = None  # Will be initialized after login
         
         self.show_login_screen()
     #creats the login screen
     def show_login_screen(self):
-        """Show login screen"""
         for widget in self.root.winfo_children():
             widget.destroy()
         
@@ -53,13 +60,13 @@ class CanvasChatbotGUI:
                 font=('Arial', 24, 'bold'), bg=self.main_bg, fg=self.sidebar_color).pack(pady=20)
         
         tk.Label(login_frame, text="Canvas URL:", 
-                font=('Arial', 12), bg=self.main_bg).pack(anchor='w', padx=20)
+                font=('Arial', 12), bg=self.main_bg, fg=self.sidebar_color).pack(anchor='w', padx=20)
         self.url_entry = tk.Entry(login_frame, width=40, font=('Arial', 11))
         self.url_entry.pack(padx=20, pady=(5, 15))
         self.url_entry.insert(0, "https://nmsu.instructure.com")
         
         tk.Label(login_frame, text="Access Token:", 
-                font=('Arial', 12), bg=self.main_bg).pack(anchor='w', padx=20)
+                font=('Arial', 12), bg=self.main_bg, fg= self.sidebar_color).pack(anchor='w', padx=20)
         self.token_entry = tk.Entry(login_frame, width=40, font=('Arial', 11), show="*")
         self.token_entry.pack(padx=20, pady=(5, 20))
         
@@ -77,7 +84,6 @@ class CanvasChatbotGUI:
         self.status_label.pack(pady=10)
     #handles the login process and authentication
     def login(self):
-        """Handle login"""
         url = self.url_entry.get().strip()
         token = self.token_entry.get().strip()
         
@@ -92,7 +98,6 @@ class CanvasChatbotGUI:
     
     # Perform login in background and fetch data
     def _do_login(self, url, token):
-        """Perform login in background"""
         try:
             self.api = CanvasAPI(url, token)
             user = self.api.get_current_user()
@@ -114,6 +119,9 @@ class CanvasChatbotGUI:
                 if assignments:
                     self.assignments_cache[course_id] = assignments
             
+            # Initialize chatbot with loaded data
+            self.chatbot = CanvasChatBot(self.api, self.courses, self.assignments_cache)
+            
             self.last_sync_time = datetime.now()
             self.root.after(0, self.show_main_screen)
             
@@ -122,7 +130,6 @@ class CanvasChatbotGUI:
     
     #creates a tutorial popup for new users        
     def tutorial_popup(self):
-        """Show tutorial popup"""
         tutorial_text = (
             "Welcome to the Canvas API Chatbot!\n\n"
             "To get started:\n"
@@ -136,7 +143,6 @@ class CanvasChatbotGUI:
     
     #creates the main screen after login is successful
     def show_main_screen(self):
-        """Show main dashboard"""
         for widget in self.root.winfo_children():
             widget.destroy()
         
@@ -151,7 +157,6 @@ class CanvasChatbotGUI:
     
     #creates the sidebar with all the buttons and search box 
     def create_sidebar(self, parent):
-        """Create sidebar with buttons"""
         sidebar = tk.Frame(parent, bg=self.sidebar_color, width=350)
         sidebar.pack(side='left', fill='y')
         sidebar.pack_propagate(False)
@@ -184,10 +189,13 @@ class CanvasChatbotGUI:
         tk.Button(sidebar, text="Settings", command=self.show_settings,
                  bg=self.button_color, font=('Arial', 12),
                  relief='flat', pady=15).pack(side='bottom', fill='x', padx=20, pady=20)
+        
+        tk.Button(sidebar, text="Home", command=self.show_dashboard,
+                 bg=self.button_color, font=('Arial', 12),
+                 relief='flat', pady=15).pack(side='bottom', fill='x', padx=20, pady=20)
     
     #creates the main content area with scrollable functionality
     def create_main_content(self, parent):
-        """Create main content area with working vertical scroll"""
         main_frame = tk.Frame(parent, bg=self.main_bg)
         main_frame.pack(side='right', fill='both', expand=True)
 
@@ -209,45 +217,58 @@ class CanvasChatbotGUI:
         content_container = tk.Frame(main_frame, bg=self.main_bg)
         content_container.pack(fill='both', expand=True)
 
-        # Canvas + Scrollbar
-        canvas = tk.Canvas(content_container, bg=self.main_bg, highlightthickness=0)
-        scrollbar = tk.Scrollbar(content_container, orient='vertical', command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Canvas + Scrollbar - Store canvas as instance variable
+        self.canvas = tk.Canvas(content_container, bg=self.main_bg, highlightthickness=0)
+        scrollbar = tk.Scrollbar(content_container, orient='vertical', command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=scrollbar.set)
 
         scrollbar.pack(side='right', fill='y')
-        canvas.pack(side='left', fill='both', expand=True, padx=30, pady=20)
+        self.canvas.pack(side='left', fill='both', expand=True, padx=30, pady=20)
 
         # Inner frame where actual widgets go
-        self.content_frame = tk.Frame(canvas, bg=self.main_bg)
-        self.content_window = canvas.create_window((0, 0), window=self.content_frame, anchor='nw')
+        self.content_frame = tk.Frame(self.canvas, bg=self.main_bg)
+        self.content_window = self.canvas.create_window((0, 0), window=self.content_frame, anchor='nw')
 
         # Update scroll region dynamically
         def on_frame_configure(event):
-            canvas.configure(scrollregion=canvas.bbox("all"))
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
         self.content_frame.bind("<Configure>", on_frame_configure)
 
-        # Make mouse wheel work
+        # Mouse wheel scrolling - works on Windows, Mac, and Linux
         def _on_mousewheel(event):
-            canvas.yview_scroll(-1 * int(event.delta / 120), "units")
-
-        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            # Windows and Mac
+            if event.delta:
+                self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            # Linux
+            elif event.num == 4:
+                self.canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                self.canvas.yview_scroll(1, "units")
+        
+        # Bind mouse wheel for Windows/Mac
+        self.canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        # Bind mouse wheel for Linux
+        self.canvas.bind_all("<Button-4>", _on_mousewheel)
+        self.canvas.bind_all("<Button-5>", _on_mousewheel)
 
         # Resize inner frame when window resizes
         def resize_canvas(event):
-            canvas.itemconfig(self.content_window, width=event.width)
+            self.canvas.itemconfig(self.content_window, width=event.width)
 
-        canvas.bind("<Configure>", resize_canvas)
+        self.canvas.bind("<Configure>", resize_canvas)
+    
+    def update_scroll_region(self):
+        self.root.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     #clears the main content area after a button is clicked
     def clear_content(self):
-        """Clear content"""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
     
     #creates the dashboard view for the main screen
     def show_dashboard(self):
-        """Show dashboard"""
         self.clear_content()
         
         tk.Label(self.content_frame, text=f"Welcome back, {self.user_name}", 
@@ -267,10 +288,12 @@ class CanvasChatbotGUI:
             mins = int((datetime.now() - self.last_sync_time).total_seconds() / 60)
             tk.Label(self.content_frame, text=f"Last synced to canvas, {mins} minutes ago",
                     font=('Arial', 10), bg=self.main_bg, fg='#6B6B6B').pack(pady=(20, 0))
+        
+        # Update scroll region
+        self.update_scroll_region()
     
     #creates a section in the dashboard with a title and list of items
     def create_section(self, title, items):
-        """Create section"""
         tk.Label(self.content_frame, text=title, 
                 font=('Arial', 16, 'bold'), bg=self.main_bg, fg='#2C1810').pack(anchor='w', pady=(20, 10))
         
@@ -283,7 +306,6 @@ class CanvasChatbotGUI:
     
     #computes the upcoming assignment for the dashboard that are due in 10 days or less 
     def get_upcoming_assignments(self):
-        """Get upcoming assignments"""
         upcoming = []
         now = datetime.now(timezone.utc)
         ten_days_from_now = now + timedelta(days=10)
@@ -323,7 +345,6 @@ class CanvasChatbotGUI:
     
     #gets the grades for display on the dashboard when clicked on the grades button
     def get_grades_display(self):
-        """Get grades for display on dashboard"""
         grades_display = []
         for course in self.courses:  # Show all courses
             course_id = course.get('id')
@@ -345,7 +366,6 @@ class CanvasChatbotGUI:
 
     #show all assignments that are upcoming and not yet submitted when view upcoming assignments is clicked
     def show_all_assignments(self):
-        """Show all upcoming unsubmitted assignments (no time limit)"""
         self.clear_content()
         
         tk.Label(
@@ -436,7 +456,7 @@ class CanvasChatbotGUI:
                     
                     tk.Label(
                         self.content_frame, 
-                        text=f"  • {assignment.get('name', 'Untitled')}{due_text}", 
+                        text=f"  - {assignment.get('name', 'Untitled')}{due_text}", 
                         font=('Arial', 11), 
                         bg=self.main_bg, 
                         fg='#2C1810'
@@ -450,6 +470,9 @@ class CanvasChatbotGUI:
                 bg=self.main_bg, 
                 fg='#2C1810'
             ).pack(anchor='w', pady=20)
+        
+        # Update scroll region
+        self.update_scroll_region()
 
     #show grades when the grades button is clicked
     def show_grades(self):
@@ -485,20 +508,44 @@ class CanvasChatbotGUI:
             # Make it clickable to show assignment details
             grade_label.bind('<Button-1>', 
                            lambda e, cid=course_id, cname=course_name: self.show_grade_details(cid, cname))
+        
+        # Update scroll region
+        self.update_scroll_region()
     
     #showes the detailed grade information for a specific course when clicked on the grades view
     def show_grade_details(self, course_id, course_name):
-        """Show assignment status (submitted / not submitted) for a course"""
         self.clear_content()
 
         tk.Label(self.content_frame, text=f"{course_name} - Assignments",
                 font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 10), anchor='w')
+
+        tk.Label(self.content_frame, text="Loading submission data...",
+                font=('Arial', 11, 'italic'), bg=self.main_bg, fg='#6B6B6B').pack(anchor='w', pady=5)
+        
+        self.root.update()  # Update UI to show loading message
 
         assignments = self.assignments_cache.get(course_id, [])
         if not assignments:
             tk.Label(self.content_frame, text="No assignments found.",
                     font=('Arial', 12), bg=self.main_bg, fg='#2C1810').pack(anchor='w', pady=10)
         else:
+            # Try bulk fetch first
+            submissions = self.api.get_assignment_submissions(course_id)
+            
+            # Create a mapping of assignment_id -> submission data
+            submission_map = {}
+            
+            if submissions:
+                for sub in submissions:
+                    assignment_id = sub.get('assignment_id')
+                    if assignment_id:
+                        submission_map[assignment_id] = sub
+            
+            # Clear the loading message
+            for widget in self.content_frame.winfo_children():
+                if "Loading" in str(widget.cget('text')):
+                    widget.destroy()
+            
             now = datetime.now(timezone.utc)
 
             # Sort by due date if available
@@ -507,32 +554,58 @@ class CanvasChatbotGUI:
             for a in assignments:
                 name = a.get("name", "Untitled Assignment")
                 due = a.get("due_at")
-                score = a.get("grade")
+                assignment_id = a.get("id")
                 possible = a.get("points_possible")
+                
+                # Get submission - try map first, then fetch individually if not found
+                submission = submission_map.get(assignment_id)
+                if not submission:
+                    # Fallback: fetch individual submission
+                    submission = self.api.get_single_assignment_submission(course_id, assignment_id)
+                    if not submission:
+                        submission = {}
+                
+                score = submission.get("score")
+                submitted = submission.get("submitted_at") is not None or submission.get("workflow_state") == "submitted"
+                
                 if due:
                     try:
                         due_dt = datetime.fromisoformat(due.replace('Z', '+00:00'))
-                        days_left = (due_dt - now).days
-                        due_text = f"Due {due_dt.strftime('%b %d, %Y')} ({days_left} days ago)"
+                        days_diff = (now - due_dt).days
+                        if days_diff > 0:
+                            due_text = f"Due {due_dt.strftime('%b %d, %Y')} ({days_diff} days ago)"
+                        elif days_diff == 0:
+                            due_text = f"Due {due_dt.strftime('%b %d, %Y')} (Today)"
+                        else:
+                            due_text = f"Due {due_dt.strftime('%b %d, %Y')} (in {-days_diff} days)"
                     except Exception:
                         due_text = "Due date invalid"
                 else:
                     due_text = "No due date"
 
-                submitted = a.get("has_submitted_submissions")
-                status = " Submitted" if submitted else " Not submitted"
+                status = "Submitted" if submitted else "Not submitted"
 
                 # Make a small formatted block for each assignment
                 frame = tk.Frame(self.content_frame, bg=self.main_bg)
                 frame.pack(fill='x', anchor='w', pady=4)
 
-                tk.Label(frame, text=f"• {name}",
+                tk.Label(frame, text=f"- {name}",
                         font=('Arial', 12, 'bold'), bg=self.main_bg, fg='#2C1810').pack(anchor='w')
                 tk.Label(frame, text=f"   {due_text}",
                         font=('Arial', 11), bg=self.main_bg, fg='#3C3C3C').pack(anchor='w')
-                tk.Label(frame, text=f"   {score}%" if score is not None else "   Not graded yet",
-                        font=('Arial', 11), bg=self.main_bg, fg='#3C3C3C').pack(anchor='w')
-                tk.Label(frame, text=f"   {possible}",
+                
+                # Display score/possible points
+                if score is not None and possible is not None:
+                    percentage = (score / possible * 100) if possible > 0 else 0
+                    score_text = f"   Score: {score}/{possible} ({percentage:.1f}%)"
+                elif score is not None:
+                    score_text = f"   Score: {score}"
+                elif possible is not None:
+                    score_text = f"   Points possible: {possible} (Not graded yet)"
+                else:
+                    score_text = "   Not graded yet"
+                
+                tk.Label(frame, text=score_text,
                         font=('Arial', 11), bg=self.main_bg, fg='#3C3C3C').pack(anchor='w')
                 tk.Label(frame, text=f"   Status: {status}",
                         font=('Arial', 11), bg=self.main_bg,
@@ -542,112 +615,170 @@ class CanvasChatbotGUI:
         tk.Button(self.content_frame, text="<- Back",
                 command=self.show_grades, bg=self.sidebar_color, fg='black',
                 font=('Arial', 11), padx=15, pady=6).pack(anchor='w', pady=20)
+        
+        # Update scroll region
+        self.update_scroll_region()
     
-    #show reminders when the reminders button is clicked    
     def show_reminders(self):
-        """Show reminders"""
+<<<<<<< HEAD
         self.clear_content()
         tk.Label(self.content_frame, text="Reminders", 
                 font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
         tk.Label(self.content_frame, text="Reminder feature coming soon!", 
                 font=('Arial', 12), bg=self.main_bg, fg='#2C1810').pack(pady=10)
+        
+        # Update scroll region
+=======
+        import tkinter as tk
+        from tkinter import messagebox, simpledialog
+
+        self.clear_content()
+
+        # In-memory list for this session only
+        if not hasattr(self, "_reminders_tmp"):
+            self._reminders_tmp = []
+
+        # Title
+        tk.Label(self.content_frame, text="Reminders",
+        font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
+
+        # Buttons row
+        btns = tk.Frame(self.content_frame, bg=self.main_bg)
+        btns.pack(pady=10)
+
+        # Dedicated area for the list (so we can re-render safely)
+        list_frame = tk.Frame(self.content_frame, bg=self.main_bg)
+        list_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        def render_list():
+            # wipe previous contents
+            for w in list_frame.winfo_children():
+                w.destroy()
+            items = sorted(self._reminders_tmp, key=lambda r: r.get("when", ""))
+            if not items:
+                tk.Label(list_frame, text="No reminders yet.", bg=self.main_bg).pack(anchor='w')
+                return
+            for r in items:
+                row = tk.Frame(list_frame, bg=self.main_bg, highlightbackground='#DDD', highlightthickness=1, padx=8, pady=6)
+                row.pack(fill='x', pady=6)
+                tk.Label(row, text=r.get("title", "(untitled)"), bg=self.main_bg, font=('Arial', 12, 'bold')).pack(anchor='w')
+                tk.Label(row, text=f"When: {r.get('when','')}", bg=self.main_bg).pack(anchor='w')
+                if r.get("note"):
+                    tk.Label(row, text=r["note"], bg=self.main_bg, fg="#3C3C3C").pack(anchor='w')
+
+        def on_add():
+            title = simpledialog.askstring("Add Reminder", "Title:", parent=self.root)
+            if not title:
+                return
+            when = simpledialog.askstring("Add Reminder", "When (YYYY-MM-DDTHH:MM):", parent=self.root)
+            if not when:
+                return
+            note = simpledialog.askstring("Add Reminder", "Note (optional):", parent=self.root) or ""
+            self._reminders_tmp.append({"title": title.strip(), "when": when.strip(), "note": note.strip()})
+            messagebox.showinfo("Reminders", "Saved.")
+            render_list()  # show the new item
+
+        def on_view():
+            render_list()
+
+        tk.Button(btns, text="Add Reminder", command=on_add,
+            bg=self.sidebar_color, relief='flat', padx=20, pady=10).grid(row=0, column=0, padx=10, pady=10)
+
+        tk.Button(btns, text="View Reminders", command=on_view,
+        bg=self.sidebar_color, relief='flat', padx=20, pady=10).grid(row=0, column=1, padx=10, pady=10)
+
+        # Back
+        tk.Button(self.content_frame, text="<- Back", command=self.show_dashboard,
+        bg=self.sidebar_color, relief='flat', padx=10, pady=6).pack(anchor='w', padx=10, pady=(20, 0))
+
+>>>>>>> 5b4d2b77d686d0dbfe4126e5cbb313ab3bc97b96
+        self.update_scroll_region()
     
-    #show settings when the settings button is clicked
+        #show settings when the settings button is clicked
     def show_settings(self):
-        """Show settings"""
         self.clear_content()
         tk.Label(self.content_frame, text="Settings", 
                 font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 20))
         tk.Label(self.content_frame, text=f"Logged in as: {self.user_name}", 
-                font=('Arial', 12), bg=self.main_bg, fg='#2C1810').pack(anchor='w', pady=10)
+                font=('Arial', 18), bg=self.main_bg, fg='#2C1810').pack(anchor='w', pady=10)
         tk.Button(self.content_frame, text="Logout", command=self.logout,
-                 bg=self.sidebar_color, fg='white', font=('Arial', 11), 
-                 padx=20, pady=5).pack(anchor='w', pady=10)
+                 bg=self.sidebar_color, fg='black', font=('Arial', 11), 
+                 padx=20, pady=5).pack(anchor='center', pady=10)
+        
+        # Update scroll region
+        self.update_scroll_region()
     
     #handles the logout process
     def logout(self):
-        """Logout"""
         self.api = None
         self.show_login_screen()
     
     #clears the placeholder text in the search box when clicked
     def clear_placeholder(self):
-        """Clear placeholder"""
         if self.search_entry.get() == "Chat with me!":
             self.search_entry.delete(0, 'end')
     
-    #processes the search query using NLTK if available, otherwise uses simple keyword matching
+    #processes the search query with intelligent intent detection
     def process_search(self):
-        """Process search with NLTK"""
         query = self.search_entry.get().strip()
-        if not query or query == "Hinted search text":
+        if not query or query == "Chat with me!":
             return
         
-        if NLTK_AVAILABLE:
-            response = self.process_nltk(query)
+        # Use chatbot to process query
+        if self.chatbot:
+            response = self.chatbot.process_query(query)
         else:
-            response = self.process_simple(query)
+            response = "Chatbot not initialized. Please try logging in again."
         
         self.show_results(query, response)
     
-    #processes the search query using NLTK for better understanding not done yet 
-    def process_nltk(self, query):
-        """Process with NLTK"""
-        try:
-            tokens = word_tokenize(query.lower())
-            stop_words = set(stopwords.words('english'))
-            keywords = [w for w in tokens if w.isalnum() and w not in stop_words]
-            
-            if any(w in keywords for w in ['assignment', 'homework', 'hw']):
-                return self.search_assignments(keywords)
-            elif any(w in keywords for w in ['due', 'deadline']):
-                return "\n".join(self.get_upcoming_assignments())
-            elif any(w in keywords for w in ['course', 'class']):
-                return "\n".join([f"* {c.get('name')}" for c in self.courses])
-            else:
-                return "Try asking about: assignments, due dates, or courses"
-        except:
-            return self.process_simple(query)
-    
-    #processes the search query using simple keyword matching not working yet 
-    def process_simple(self, query):
-        """Simple keyword search"""
-        query_lower = query.lower()
-        if 'assignment' in query_lower:
-            return self.search_assignments([])
-        elif 'due' in query_lower:
-            return "\n".join(self.get_upcoming_assignments())
-        elif 'course' in query_lower:
-            return "\n".join([f"* {c.get('name')}" for c in self.courses])
-        return "Try asking about: assignments, due dates, or courses"
-    
-    #searches assignments based on keywords providednot working yet 
-    def search_assignments(self, keywords):
-        """Search assignments"""
-        results = []
-        for course in self.courses:
-            for assignment in self.assignments_cache.get(course.get('id'), []):
-                name = assignment.get('name', '').lower()
-                if not keywords or any(k in name for k in keywords):
-                    results.append(f"* {assignment.get('name')} ({course.get('name')})")
-                    if len(results) >= 10:
-                        break
-        return "\n".join(results) if results else "No assignments found"
-    
-    #shows the search results in the main content area
     def show_results(self, query, response):
-        """Show search results"""
         self.clear_content()
         
-        tk.Label(self.content_frame, text="Search Results", 
+        # Chat header
+        tk.Label(self.content_frame, text="Chat Assistant", 
                 font=('Arial', 20, 'bold'), bg=self.main_bg, fg='#2C1810').pack(pady=(0, 10))
-        tk.Label(self.content_frame, text=f"Query: {query}", 
-                font=('Arial', 12, 'italic'), bg=self.main_bg, fg='#6B6B6B').pack(anchor='w', pady=(0, 20))
-        tk.Label(self.content_frame, text=response, 
-                font=('Arial', 12), bg=self.main_bg, fg='#2C1810', justify='left').pack(anchor='w', pady=10)
-        tk.Button(self.content_frame, text="<- Back", command=self.show_dashboard,
-                 bg=self.sidebar_color, fg='white', font=('Arial', 11), 
-                 padx=15, pady=5).pack(anchor='w', pady=20)
+        
+        # User query in a speech bubble style
+        query_frame = tk.Frame(self.content_frame, bg='#E8E8E8', relief='solid', borderwidth=1)
+        query_frame.pack(fill='x', pady=(10, 5), padx=20)
+        
+        tk.Label(query_frame, text="You:", 
+                font=('Arial', 10, 'bold'), bg='#E8E8E8', fg='#666666').pack(anchor='w', padx=10, pady=(5, 0))
+        tk.Label(query_frame, text=query, 
+                font=('Arial', 12), bg='#E8E8E8', fg='#2C1810', 
+                wraplength=700, justify='left').pack(anchor='w', padx=10, pady=(0, 10))
+        
+        # Assistant response in a different speech bubble
+        response_frame = tk.Frame(self.content_frame, bg='#F8F8FF', relief='solid', borderwidth=1)
+        response_frame.pack(fill='x', pady=(5, 10), padx=20)
+        
+        tk.Label(response_frame, text="Assistant:", 
+                font=('Arial', 10, 'bold'), bg='#F8F8FF', fg=self.sidebar_color).pack(anchor='w', padx=10, pady=(5, 0))
+        tk.Label(response_frame, text=response, 
+                font=('Arial', 12), bg='#F8F8FF', fg='#2C1810', 
+                wraplength=700, justify='left').pack(anchor='w', padx=10, pady=(5, 10))
+        
+        # Buttons
+        button_frame = tk.Frame(self.content_frame, bg=self.main_bg)
+        button_frame.pack(pady=20)
+        
+        tk.Button(button_frame, text="Ask Another Question", command=self.focus_search,
+                 bg=self.sidebar_color, fg='black', font=('Arial', 11), 
+                 padx=20, pady=8).pack(side='left', padx=5)
+        
+        tk.Button(button_frame, text="Back to Dashboard", command=self.show_dashboard,
+                 bg=self.button_color, fg='black', font=('Arial', 11), 
+                 padx=20, pady=8).pack(side='left', padx=5)
+        
+        # Update scroll region
+        self.update_scroll_region()
+    
+    def focus_search(self):
+        self.show_dashboard()
+        self.search_entry.focus()
+        if self.search_entry.get() == "Chat with me!":
+            self.search_entry.delete(0, 'end')
 
 # the entry point for the application
 def main():
